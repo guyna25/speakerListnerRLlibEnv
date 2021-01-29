@@ -3,6 +3,7 @@ from functools import partial
 from multiprocessing import Pipe, Process
 
 import numpy as np
+import supersuit
 
 from ray.rllib.models import ModelCatalog
 from copy import deepcopy
@@ -34,14 +35,14 @@ from pettingzoo.mpe import simple_speaker_listener_v3
 
 def env_creator(config):
     env = simple_speaker_listener_v3.env()
-    env = dtype_v0(env, dtype=float32)
-    env = color_reduction_v0(env, mode="R")
-    env = normalize_obs_v0(env)
+    # env = dtype_v0(env, dtype=float32)
+    # env = color_reduction_v0(env, mode="R")
+    # env = normalize_obs_v0(env)
     return env
 alg_name = "PPO"
 #config = deepcopy(get_agent_class(alg_name)._default_config)
 
-config = deepcopy(a2c.A2C_DEFAULT_CONFIG.copy())
+#config = deepcopy(a2c.A2C_DEFAULT_CONFIG.copy())
 # config["env"] = "simple_speaker_listner"
 # config["env_config"] = None
 # config["rollout_fragment_length"] = 20
@@ -54,22 +55,23 @@ config = deepcopy(a2c.A2C_DEFAULT_CONFIG.copy())
 s = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
 multiagent_dict = dict()
 multiagent_policies = dict()
-env = SLenv('simple_speaker_listener')
-agents_name = env.get_agents_name()
-config = {'multiagent': {'policies': {agents_name[0]: (None, env.obs_space, env.action_space, a2c.A2C_DEFAULT_CONFIG.copy()),
-                                      agents_name[1]: (None, env.obs_space, env.action_space, a2c.A2C_DEFAULT_CONFIG.copy())},
-                         "policy_mapping_fn": lambda agent_id: agent_id},
+env = simple_speaker_listener_v3.env()
+agents_name = deepcopy(env.possible_agents)
+"""'multiagent': {'policies': {agents_name[0]: (None, env.observe(agents_name[0]), env.action_space, a2c.A2C_DEFAULT_CONFIG.copy()),
+                                      agents_name[1]: (None, env.observe(agents_name[0]), env.action_space, a2c.A2C_DEFAULT_CONFIG.copy())},
+                         "policy_mapping_fn": lambda agent_id: agent_id},"""
+config = {
           "num_gpus": 0,
           "num_workers": 1,
           #"env": SLenv
           }
-register_env("simple_speaker_listner", lambda config: PettingZooEnv(env_creator(config)))
+register_env("simple_speaker_listner", lambda config: PettingZooEnv(env_creator({})))
 
-test_env = PettingZooEnv(env_creator({}))
+test_env = supersuit.aec_wrappers.pad_observations(PettingZooEnv(env_creator({})))
 obs_space = test_env.observation_space
 act_space = test_env.action_space
 ray.init(num_gpus=0, local_mode=True)
-agent = a2c.A2CTrainer(config=config, env="simple_speaker_listener")
+agent = a2c.A2CTrainer(env="simple_speaker_listener")
 
 for it in range(5):
     result = agent.train()
