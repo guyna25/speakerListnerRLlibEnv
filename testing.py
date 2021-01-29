@@ -33,7 +33,7 @@ from pettingzoo.mpe import simple_speaker_listener_v3
 # register_env("TaxiMultiAgentEnv", TaxiEnv)
 
 def env_creator(config):
-    env = simple_speaker_listener_v3.env(local_ratio=config.get("local_ratio", 0.2))
+    env = simple_speaker_listener_v3.env()
     env = dtype_v0(env, dtype=float32)
     env = color_reduction_v0(env, mode="R")
     env = normalize_obs_v0(env)
